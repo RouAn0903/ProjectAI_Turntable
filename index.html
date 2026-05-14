@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>今天吃什麼？</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ===== Themes ===== */
+:root {
+  --bg: #FFF8F0; --bg2: #FFE8D0; --surface: #FFFFFF;
+  --accent: #E8440A; --accent2: #FF8C42;
+  --text: #1A0A00; --muted: #8A6650;
+  --border: #EDD5B8; --shadow: rgba(232,68,10,0.14);
+  --ring: #E8440A;
+}
+[data-theme="night"] {
+  --bg:#0D0A08; --bg2:#1C1409; --surface:#1A1209;
+  --accent:#FF6B35; --accent2:#FFB347;
+  --text:#FFF0E0; --muted:#B07840;
+  --border:#3A2810; --shadow:rgba(255,107,53,0.2);
+  --ring:#FF6B35;
+}
+[data-theme="spring"] {
+  --bg:#FFF0F5; --bg2:#FFE0EE; --surface:#FFFFFF;
+  --accent:#D6006B; --accent2:#FF6BAD;
+  --text:#1A0010; --muted:#8A406A;
+  --border:#F0BCD8; --shadow:rgba(214,0,107,0.14);
+  --ring:#D6006B;
+}
+[data-theme="ocean"] {
+  --bg:#EFF8FF; --bg2:#D0EEFF; --surface:#FFFFFF;
+  --accent:#0055BB; --accent2:#3D9FFF;
+  --text:#001122; --muted:#3D6888;
+  --border:#A8D8F5; --shadow:rgba(0,85,187,0.13);
+  --ring:#0055BB;
+}
+[data-theme="forest"] {
+  --bg:#F0F8F1; --bg2:#D5EDD8; --surface:#FFFFFF;
+  --accent:#1A7830; --accent2:#45B862;
+  --text:#001508; --muted:#3D6848;
+  --border:#AADAB5; --shadow:rgba(26,120,48,0.13);
+  --ring:#1A7830;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Zen Maru Gothic',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; overflow-x:hidden;
+  transition:background .5s,color .5s;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 15%, var(--accent2),transparent),
+    radial-gradient(ellipse 50% 40% at 85% 85%, var(--accent),transparent);
+  opacity:.05;
+}
+
+/* ---- Theme bar ---- */
+.theme-bar{
+  position:fixed; top:14px; right:14px; z-index:200;
+  display:flex; gap:7px; align-items:center;
+  background:var(--surface); padding:7px 12px;
+  border-radius:40px; border:1px solid var(--border);
+  box-shadow:0 4px 18px var(--shadow);
+}
+.tb{ width:22px; height:22px; border-radius:50%; border:2px solid transparent;
+  cursor:pointer; transition:transform .2s,border-color .2s; }
+.tb:hover,.tb.on{ transform:scale(1.25); border-color:var(--text); }
+.tb[data-t="default"]{ background:conic-gradient(#FFE8D0,#E8440A); }
+.tb[data-t="night"]  { background:conic-gradient(#1C1409,#FF6B35); }
+.tb[data-t="spring"] { background:conic-gradient(#FFE0EE,#D6006B); }
+.tb[data-t="ocean"]  { background:conic-gradient(#D0EEFF,#0055BB); }
+.tb[data-t="forest"] { background:conic-gradient(#D5EDD8,#1A7830); }
+
+/* ---- Layout ---- */
+.wrap{ max-width:1080px; margin:0 auto; padding:0 22px 70px; position:relative; z-index:1; }
+
+/* ---- Header ---- */
+header{ text-align:center; padding:56px 0 36px; }
+.big-emoji{ font-size:3.2rem; display:block; margin-bottom:6px;
+  animation:bob 3s ease-in-out infinite; }
+@keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+h1{
+  font-family:'Noto Serif TC',serif; font-weight:900;
+  font-size:clamp(2.4rem,6vw,4.2rem); letter-spacing:.06em; line-height:1.1;
+  background:linear-gradient(130deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.sub{ margin-top:10px; color:var(--muted); font-size:.95rem; letter-spacing:.12em; }
+
+/* ---- Main grid ---- */
+.main{ display:grid; grid-template-columns:1fr 1px 300px;
+  align-items:start; gap:36px; max-width:860px; margin:0 auto; }
+.vline{ background:linear-gradient(to bottom,transparent,var(--border),transparent); width:1px; align-self:stretch; }
+
+/* ---- Wheel ---- */
+.wheel-col{ display:flex; flex-direction:column; align-items:center; gap:22px; }
+.wheel-wrap{ position:relative; width:300px; height:300px; }
+.pointer{
+  position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  width:0; height:0;
+  border-left:13px solid transparent; border-right:13px solid transparent;
+  border-top:26px solid var(--accent); z-index:10;
+  filter:drop-shadow(0 2px 6px var(--shadow));
+}
+canvas#wh{
+  width:300px; height:300px; border-radius:50%;
+  box-shadow:0 6px 32px var(--shadow), 0 0 0 5px var(--bg), 0 0 0 9px var(--ring);
+  transition:box-shadow .3s;
+}
+canvas#wh.spinning{
+  box-shadow:0 12px 52px var(--shadow), 0 0 0 5px var(--bg), 0 0 0 9px var(--accent2), 0 0 28px var(--accent2);
+}
+.spin-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; border:none; border-radius:40px;
+  padding:15px 44px; font-size:1.15rem;
+  font-family:'Noto Serif TC',serif; font-weight:700; letter-spacing:.1em;
+  cursor:pointer; box-shadow:0 5px 22px var(--shadow);
+  transition:transform .15s,box-shadow .15s,opacity .3s;
+}
+.spin-btn:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 10px 30px var(--shadow); }
+.spin-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* ---- Side panel ---- */
+.side{ display:flex; flex-direction:column; gap:18px; }
+
+.result-card{
+  display:none; flex-direction:column; align-items:center; gap:6px;
+  background:var(--surface); border:2px solid var(--accent);
+  border-radius:20px; padding:20px 24px; text-align:center;
+  box-shadow:0 4px 20px var(--shadow);
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1);
+}
+.result-card.show{ display:flex; }
+@keyframes pop{ from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+.rc-label{ font-size:.75rem; color:var(--muted); letter-spacing:.12em; }
+.rc-emoji{ font-size:2rem; }
+.rc-name{
+  font-family:'Noto Serif TC',serif; font-size:2rem; font-weight:900;
+  background:linear-gradient(130deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+
+.settings-box{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:22px; box-shadow:0 3px 16px var(--shadow);
+  display:flex; flex-direction:column; gap:16px;
+}
+.settings-box h3{ font-family:'Noto Serif TC',serif; font-size:.9rem;
+  color:var(--muted); letter-spacing:.05em;
+  border-bottom:1px solid var(--border); padding-bottom:8px; }
+
+.loc-row{ display:flex; align-items:center; gap:8px; font-size:.82rem; color:var(--muted); }
+.dot{ width:9px; height:9px; border-radius:50%; background:#ccc; flex-shrink:0; transition:background .3s; }
+.dot.ok{ background:#22c55e; box-shadow:0 0 7px #22c55e; }
+.dot.err{ background:#ef4444; }
+.dot.wait{ background:var(--accent2); animation:blink 1s infinite; }
+@keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.slider-wrap label{ display:flex; justify-content:space-between;
+  font-size:.8rem; color:var(--muted); margin-bottom:5px; }
+input[type=range]{ -webkit-appearance:none; width:100%; height:4px;
+  border-radius:4px; background:var(--border); outline:none; }
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--accent); cursor:pointer; box-shadow:0 2px 7px var(--shadow); }
+
+.osm-note{ font-size:.72rem; color:var(--muted); line-height:1.6; }
+
+/* ---- Results ---- */
+.results{ margin-top:46px; display:none; }
+.results.show{ display:block; }
+.rh{ font-family:'Noto Serif TC',serif; font-size:1.5rem; font-weight:700;
+  display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+.tag{ background:linear-gradient(130deg,var(--accent),var(--accent2)); color:#fff;
+  font-size:.78rem; padding:3px 12px; border-radius:20px; font-family:'Zen Maru Gothic',sans-serif; }
+.fallback-note{ font-size:.8rem; color:var(--muted); padding:8px 14px;
+  background:var(--bg2); border-radius:10px; margin-bottom:14px; display:none; }
+.fallback-note.show{ display:block; }
+
+.spinner{ display:none; justify-content:center; align-items:center;
+  gap:10px; padding:40px; color:var(--muted); font-size:.9rem; }
+.spinner.show{ display:flex; }
+.ring{ width:30px; height:30px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:rot .8s linear infinite; }
+@keyframes rot{ to{transform:rotate(360deg)} }
+
+.tbl-wrap{ overflow-x:auto; border-radius:16px;
+  border:1px solid var(--border); box-shadow:0 4px 18px var(--shadow);
+  display:none; }
+.tbl-wrap.show{ display:block; }
+table{ width:100%; border-collapse:collapse; background:var(--surface); font-size:.88rem; }
+thead tr{ background:linear-gradient(130deg,var(--accent),var(--accent2)); color:#fff; }
+thead th{ padding:13px 14px; text-align:left; font-weight:600;
+  letter-spacing:.03em; white-space:nowrap; }
+tbody tr{ border-bottom:1px solid var(--border); transition:background .15s; }
+tbody tr:last-child{ border-bottom:none; }
+tbody tr:hover{ background:var(--bg2); }
+tbody td{ padding:13px 14px; vertical-align:middle; }
+.rname{ font-weight:700; font-family:'Noto Serif TC',serif; }
+.badge{ display:inline-block; padding:2px 9px; border-radius:14px; font-size:.75rem; font-weight:600; }
+.badge.hours{ background:var(--bg2); color:var(--muted); font-size:.72rem; max-width:160px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+
+.link-btn{ display:inline-flex; align-items:center; gap:4px; color:var(--accent);
+  text-decoration:none; font-size:.78rem; padding:4px 9px;
+  border:1px solid var(--accent); border-radius:16px;
+  transition:background .2s,color .2s; white-space:nowrap; margin:2px; }
+.link-btn:hover{ background:var(--accent); color:#fff; }
+
+.no-result,.err-state{
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:48px; text-align:center; color:var(--muted);
+  background:var(--surface); border-radius:16px; border:1px solid var(--border);
+}
+.no-result.show,.err-state.show{ display:flex; }
+.big-icon{ font-size:2.8rem; }
+
+footer{ text-align:center; padding:22px; color:var(--muted);
+  font-size:.75rem; letter-spacing:.05em;
+  border-top:1px solid var(--border); margin-top:36px; }
+
+@media(max-width:680px){
+  .main{ grid-template-columns:1fr; gap:20px; }
+  .vline{ display:none; }
+  .wheel-wrap,canvas#wh{ width:260px; height:260px; }
+}
+</style>
+</head>
+<body data-theme="default">
+
+<!-- Theme bar -->
+<div class="theme-bar">
+  <div class="tb on" data-t="default" title="暖橙" onclick="setTheme('default',this)"></div>
+  <div class="tb"    data-t="night"   title="深夜" onclick="setTheme('night',this)"></div>
+  <div class="tb"    data-t="spring"  title="春日" onclick="setTheme('spring',this)"></div>
+  <div class="tb"    data-t="ocean"   title="海洋" onclick="setTheme('ocean',this)"></div>
+  <div class="tb"    data-t="forest"  title="森林" onclick="setTheme('forest',this)"></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <span class="big-emoji">🍜</span>
+    <h1>今天吃什麼？</h1>
+    <p class="sub">轉動命運之輪，讓美食來找你</p>
+  </header>
+
+  <div class="main">
+    <!-- Wheel -->
+    <div class="wheel-col">
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <canvas id="wh" width="300" height="300"></canvas>
+      </div>
+      <button class="spin-btn" id="spinBtn" onclick="startSpin()">🎲 開始轉！</button>
+    </div>
+
+    <div class="vline"></div>
+
+    <!-- Side -->
+    <div class="side">
+      <div class="result-card" id="rcCard">
+        <span class="rc-emoji" id="rcEmoji">🍜</span>
+        <span class="rc-label">今日推薦</span>
+        <span class="rc-name" id="rcName">???</span>
+      </div>
+
+      <div class="settings-box">
+        <h3>⚙ 搜尋設定</h3>
+        <div class="loc-row">
+          <div class="dot wait" id="dot"></div>
+          <span id="locTxt">正在取得定位…</span>
+        </div>
+        <div class="slider-wrap">
+          <label><span>搜尋半徑</span><span id="rval">1500 公尺</span></label>
+          <input type="range" id="rng" min="500" max="5000" step="500" value="1500"
+            oninput="document.getElementById('rval').textContent=this.value+' 公尺'"/>
+        </div>
+        <div class="osm-note">
+          🗺 資料來源：<b>OpenStreetMap</b><br>
+          完全免費，無需任何 API Key
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="rh">
+      附近的<span id="catLabel">餐廳</span>
+      <span class="tag" id="cntTag">0 間</span>
+    </div>
+    <div class="fallback-note" id="fallbackNote">
+      ⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考
+    </div>
+    <div class="spinner" id="spinner"><div class="ring"></div><span>搜尋附近餐廳中…</span></div>
+    <div class="tbl-wrap" id="tblWrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>餐廳名稱</th><th>料理類型</th>
+          <th>營業時間</th><th>地址</th><th>連結</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="no-result" id="noResult">
+      <div class="big-icon">😢</div>
+      <div>附近沒有找到相關餐廳</div>
+      <div style="font-size:.82rem">試試擴大搜尋半徑，或換個類別</div>
+    </div>
+    <div class="err-state" id="errState">
+      <div class="big-icon">⚠️</div>
+      <div id="errMsg">發生錯誤</div>
+    </div>
+  </div>
+</div>
+
+<footer>🍽️ 今天吃什麼？ &nbsp;|&nbsp; 地圖資料 © OpenStreetMap contributors</footer>
+
+<script>
+/* ===== Wheel segments ===== */
+const SEG = [
+  {label:"中式",  emoji:"🥢", color:"#E8440A"},
+  {label:"日式",  emoji:"🍱", color:"#FF8C42"},
+  {label:"韓式",  emoji:"🌶️", color:"#E83A6A"},
+  {label:"西式",  emoji:"🍔", color:"#3B82F6"},
+  {label:"泰式",  emoji:"🥭", color:"#22C55E"},
+  {label:"義式",  emoji:"🍝", color:"#A855F7"},
+  {label:"越式",  emoji:"🍜", color:"#F59E0B"},
+  {label:"印度",  emoji:"🍛", color:"#06B6D4"},
+  {label:"素食",  emoji:"🥗", color:"#10B981"},
+  {label:"墨西哥",emoji:"🌮", color:"#EF4444"},
+];
+
+const canvas = document.getElementById('wh');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const CX = W/2, CY = H/2, R = W/2 - 8;
+
+let angle = 0, spinning = false;
+let userLat = null, userLng = null;
+
+/* ===== Draw ===== */
+function draw(a) {
+  ctx.clearRect(0,0,W,H);
+  const n = SEG.length, arc = 2*Math.PI/n;
+  SEG.forEach((s,i) => {
+    const s0 = a + i*arc, s1 = s0 + arc;
+    ctx.beginPath(); ctx.moveTo(CX,CY);
+    ctx.arc(CX,CY,R,s0,s1); ctx.closePath();
+    ctx.fillStyle = s.color; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth=2; ctx.stroke();
+
+    ctx.save();
+    ctx.translate(CX,CY); ctx.rotate(s0+arc/2);
+    ctx.textAlign='right';
+    ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=4;
+    ctx.fillStyle='#fff';
+    ctx.font='bold 13px "Zen Maru Gothic",sans-serif';
+    ctx.fillText(s.label, R-10, 5);
+    ctx.font='15px serif'; ctx.fillText(s.emoji, R-10, -11);
+    ctx.restore();
+  });
+  // centre
+  ctx.beginPath(); ctx.arc(CX,CY,26,0,2*Math.PI);
+  ctx.fillStyle='#fff'; ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.08)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.font='18px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#444'; ctx.fillText('🎰',CX,CY);
+}
+draw(0);
+
+/* ===== Spin ===== */
+function startSpin() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  canvas.classList.add('spinning');
+  document.getElementById('rcCard').classList.remove('show');
+  document.getElementById('results').classList.remove('show');
+
+  const extra = (5 + Math.random()*5) * 2 * Math.PI;
+  const target = angle + extra + Math.random() * 2 * Math.PI;
+  const dur = 4200 + Math.random()*1000;
+  const t0 = performance.now(), a0 = angle;
+
+  function ease(t){ return 1 - Math.pow(1-t,4); }
+  function frame(now) {
+    const t = Math.min((now-t0)/dur, 1);
+    angle = a0 + (target-a0)*ease(t);
+    draw(angle);
+    if (t < 1) { requestAnimationFrame(frame); }
+    else {
+      angle = target % (2*Math.PI);
+      spinning = false;
+      canvas.classList.remove('spinning');
+      document.getElementById('spinBtn').disabled = false;
+      onEnd();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function getResult() {
+  const n = SEG.length, arc = 2*Math.PI/n;
+  const norm = ((-angle - Math.PI/2) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  return SEG[Math.floor(norm/arc) % n];
+}
+
+function onEnd() {
+  const seg = getResult();
+  document.getElementById('rcEmoji').textContent = seg.emoji;
+  document.getElementById('rcName').textContent  = seg.label;
+  const card = document.getElementById('rcCard');
+  card.classList.remove('show'); void card.offsetWidth; card.classList.add('show');
+  fetchRestaurants(seg.label);
+}
+
+/* ===== Geolocation ===== */
+const dot = document.getElementById('dot');
+const locTxt = document.getElementById('locTxt');
+
+navigator.geolocation
+  ? navigator.geolocation.getCurrentPosition(
+      p => {
+        userLat = p.coords.latitude; userLng = p.coords.longitude;
+        dot.className='dot ok';
+        locTxt.textContent=`已定位（${userLat.toFixed(4)}, ${userLng.toFixed(4)}）`;
+      },
+      () => { dot.className='dot err'; locTxt.textContent='定位失敗，請允許位置存取'; }
+    )
+  : (dot.className='dot err', locTxt.textContent='瀏覽器不支援定位');
+
+/* ===== Fetch ===== */
+async function fetchRestaurants(cat) {
+  const rs = document.getElementById('results');
+  const sp = document.getElementById('spinner');
+  const tw = document.getElementById('tblWrap');
+  const nr = document.getElementById('noResult');
+  const er = document.getElementById('errState');
+  const fb = document.getElementById('fallbackNote');
+
+  rs.classList.add('show');
+  sp.classList.add('show');
+  [tw,nr,er,fb].forEach(el=>el.classList.remove('show'));
+  document.getElementById('catLabel').textContent = cat;
+
+  if (!userLat || !userLng) {
+    sp.classList.remove('show'); er.classList.add('show');
+    document.getElementById('errMsg').textContent='無法取得定位，請允許位置存取後重新整理';
+    return;
+  }
+
+  const radius = document.getElementById('rng').value;
+  try {
+    const res = await fetch(`/api/nearby-restaurants?lat=${userLat}&lng=${userLng}&category=${encodeURIComponent(cat)}&radius=${radius}`);
+    const data = await res.json();
+    sp.classList.remove('show');
+
+    if (!res.ok) { er.classList.add('show'); document.getElementById('errMsg').textContent=data.error||'伺服器錯誤'; return; }
+
+    if (data.is_fallback) fb.classList.add('show');
+    document.getElementById('cntTag').textContent = `${data.count} 間`;
+
+    if (!data.results || data.results.length === 0) { nr.classList.add('show'); return; }
+
+    document.getElementById('tbody').innerHTML = data.results.map((r,i)=>`
+      <tr>
+        <td style="color:var(--muted);font-size:.82rem">${i+1}</td>
+        <td><div class="rname">${esc(r.name)}</div></td>
+        <td style="font-size:.82rem;color:var(--muted)">${esc(r.cuisine)||'—'}</td>
+        <td>${r.opening_hours
+          ? `<span class="badge hours" title="${esc(r.opening_hours)}">${esc(r.opening_hours)}</span>`
+          : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+        <td style="font-size:.8rem;color:var(--muted);max-width:180px">${esc(r.address)||'—'}</td>
+        <td style="white-space:nowrap">
+          ${r.maps_search?`<a class="link-btn" href="${r.maps_search}" target="_blank" rel="noopener">🗺 地圖</a>`:''}
+          ${r.osm_url?`<a class="link-btn" href="${r.osm_url}" target="_blank" rel="noopener">🌐 OSM</a>`:''}
+          ${r.website?`<a class="link-btn" href="${r.website}" target="_blank" rel="noopener">🔗 官網</a>`:''}
+        </td>
+      </tr>`).join('');
+
+    tw.classList.add('show');
+  } catch(e) {
+    sp.classList.remove('show'); er.classList.add('show');
+    document.getElementById('errMsg').textContent=`無法連線至後端（${e.message}）`;
+  }
+}
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+/* ===== Theme ===== */
+function setTheme(t, el) {
+  document.body.setAttribute('data-theme',t);
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  draw(angle);
+}
+</script>
+</body>
+</html>
