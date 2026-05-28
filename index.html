@@ -279,7 +279,7 @@ footer{ text-align:center; padding:22px; color:var(--muted);
         <div class="slider-wrap">
           <label><span>搜尋半徑</span><span id="rval">500 公尺</span></label>
           <input type="range" id="rng" min="250" max="1000" step="50" value="500"
-            oninput="document.getElementById('rval').textContent=this.value+' 公尺'"/>
+            oninput="onRadiusChange(this.value)"/>
         </div>
         <div class="osm-note">
           🗺 資料來源：<b>OpenStreetMap</b><br>
@@ -418,6 +418,13 @@ function onEnd() {
   document.getElementById('rcName').textContent  = seg.label;
   const card = document.getElementById('rcCard');
   card.classList.remove('show'); void card.offsetWidth; card.classList.add('show');
+
+  // 問題②：重新轉時先隱藏店家總數
+  document.getElementById('cntTag').textContent = '';
+
+  // 記住目前類別，供半徑變更時重新查詢
+  window._currentCategory = seg.label;
+
   fetchRestaurants(seg.label);
 }
 
@@ -425,16 +432,31 @@ function onEnd() {
 const dot = document.getElementById('dot');
 const locTxt = document.getElementById('locTxt');
 
-navigator.geolocation
-  ? navigator.geolocation.getCurrentPosition(
-      p => {
-        userLat = p.coords.latitude; userLng = p.coords.longitude;
-        dot.className='dot ok';
-        locTxt.textContent=`已定位（${userLat.toFixed(4)}, ${userLng.toFixed(4)}）`;
-      },
-      () => { dot.className='dot err'; locTxt.textContent='定位失敗，請允許位置存取'; }
-    )
-  : (dot.className='dot err', locTxt.textContent='瀏覽器不支援定位');
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      userLat = p.coords.latitude; userLng = p.coords.longitude;
+      dot.className='dot ok';
+      locTxt.textContent=`已定位（${userLat.toFixed(4)}, ${userLng.toFixed(4)}）`;
+    },
+    () => {
+      dot.className='dot err';
+      locTxt.textContent='⚠️ 定位失敗，使用測試座標（板橋車站）';
+    },
+    { timeout: 8000 }
+  );
+} else {
+  dot.className='dot err';
+  locTxt.textContent='⚠️ 瀏覽器不支援定位，使用測試座標（板橋車站）';
+}
+
+// 問題①：半徑變更時，若已有轉盤結果則重新查詢
+function onRadiusChange(val) {
+  document.getElementById('rval').textContent = val + ' 公尺';
+  if (window._currentCategory) {
+    fetchRestaurants(window._currentCategory);
+  }
+}
 
 /* ===== Fetch ===== */
 async function fetchRestaurants(cat) {
@@ -450,21 +472,27 @@ async function fetchRestaurants(cat) {
   [tw,nr,er,fb].forEach(el=>el.classList.remove('show'));
   document.getElementById('catLabel').textContent = cat;
 
-  if (!userLat || !userLng) {
-    sp.classList.remove('show'); er.classList.add('show');
-    document.getElementById('errMsg').textContent='無法取得定位，請允許位置存取後重新整理';
-    return;
-  }
-
   const radius = document.getElementById('rng').value;
+  const latParam = userLat ? `&lat=${userLat}` : '';
+  const lngParam = userLng ? `&lng=${userLng}` : '';
+
   try {
-    const res = await fetch(`/api/nearby-restaurants?lat=${userLat}&lng=${userLng}&category=${encodeURIComponent(cat)}&radius=${radius}`);
+    const res = await fetch(`/api/nearby-restaurants?category=${encodeURIComponent(cat)}&radius=${radius}${latParam}${lngParam}`);
     const data = await res.json();
     sp.classList.remove('show');
 
     if (!res.ok) { er.classList.add('show'); document.getElementById('errMsg').textContent=data.error||'伺服器錯誤'; return; }
 
-    if (data.is_fallback) fb.classList.add('show');
+    // 問題③：只有 is_fallback=true 且結果不為空時才顯示警告
+    if (data.using_test_location) {
+      fb.textContent = '📍 使用測試座標（板橋車站）— 請允許瀏覽器定位以顯示您附近的餐廳';
+      fb.classList.add('show');
+    } else if (data.is_fallback && data.results && data.results.length > 0) {
+      fb.textContent = '⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考';
+      fb.classList.add('show');
+    }
+
+    // 問題②：有結果才更新店家總數
     document.getElementById('cntTag').textContent = `${data.count} 間`;
 
     if (!data.results || data.results.length === 0) { nr.classList.add('show'); return; }
