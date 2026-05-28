@@ -339,7 +339,16 @@ const SEG = [
 
 const canvas = document.getElementById('wh');
 const ctx = canvas.getContext('2d');
-const W = canvas.width, H = canvas.height;
+const originalW = canvas.width;
+const originalH = canvas.height;
+const dpr = window.devicePixelRatio || 1;
+canvas.width = originalW * dpr;
+canvas.height = originalH * dpr;
+canvas.style.width = originalW + 'px';
+canvas.style.height = originalH + 'px';
+ctx.scale(dpr, dpr);
+
+const W = originalW, H = originalH;
 const CX = W/2, CY = H/2, R = W/2 - 8;
 
 let angle = 0, spinning = false;
