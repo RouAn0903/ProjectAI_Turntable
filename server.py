@@ -2,17 +2,36 @@
 """
 今天吃什麼？ - 後端伺服器
 使用 OpenStreetMap Overpass API 查詢附近餐廳（完全免費，無需 API Key）
+
+本版整合所有修改：
+  1. 定位失敗時自動使用測試座標（板橋車站）
+  2. 排除飲料/甜點類餐廳
+  3. 搜尋流程：精確 → 擴大半徑 → 回退所有餐廳（原始半徑）
+  4. 移除 name 過濾，避免「😢 找不到」誤觸發
+  5. favicon 路由，消除 404 警告
+  6. PORT 環境變數支援（Render / Railway 部署用）
 """
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+OVERPASS_URL  = "https://overpass-api.de/api/interpreter"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
+
+# 測試用預設座標（板橋車站）—— 定位失敗時自動使用
+TEST_LAT = 25.0143
+TEST_LNG = 121.4628
+
+# 排除飲料 / 甜點 / 酒吧類
+EXCLUDE_CUISINE = (
+    "coffee|bubble_tea|tea|juice|smoothie|drinks|beverage"
+    "|ice_cream|dessert|bakery|bar|cocktail|wine|beer"
+)
 
 # 餐廳類別 → OSM cuisine tag 關鍵字
 CATEGORY_MAP = {
@@ -30,24 +49,28 @@ CATEGORY_MAP = {
 
 
 def build_query(lat, lng, cuisines, radius):
+    """精確搜尋：指定 cuisine + 排除飲料類"""
     regex = "|".join(cuisines)
     return f"""
 [out:json][timeout:25];
 (
-  node["amenity"="restaurant"]["cuisine"~"{regex}",i](around:{radius},{lat},{lng});
-  node["amenity"="fast_food"]["cuisine"~"{regex}",i](around:{radius},{lat},{lng});
-  way["amenity"="restaurant"]["cuisine"~"{regex}",i](around:{radius},{lat},{lng});
+  node["amenity"="restaurant"]["cuisine"~"{regex}",i]["cuisine"!~"{EXCLUDE_CUISINE}",i](around:{radius},{lat},{lng});
+  node["amenity"="fast_food"]["cuisine"~"{regex}",i]["cuisine"!~"{EXCLUDE_CUISINE}",i](around:{radius},{lat},{lng});
+  way["amenity"="restaurant"]["cuisine"~"{regex}",i]["cuisine"!~"{EXCLUDE_CUISINE}",i](around:{radius},{lat},{lng});
 );
 out center 20;
 """
 
 
 def build_fallback_query(lat, lng, radius):
+    """回退搜尋：拿掉 cuisine 條件，找所有餐廳（仍排除飲料類）"""
     return f"""
 [out:json][timeout:25];
 (
-  node["amenity"="restaurant"](around:{radius},{lat},{lng});
-  way["amenity"="restaurant"](around:{radius},{lat},{lng});
+  node["amenity"="restaurant"]["cuisine"!~"{EXCLUDE_CUISINE}",i](around:{radius},{lat},{lng});
+  node["amenity"="restaurant"][!"cuisine"](around:{radius},{lat},{lng});
+  way["amenity"="restaurant"]["cuisine"!~"{EXCLUDE_CUISINE}",i](around:{radius},{lat},{lng});
+  way["amenity"="restaurant"][!"cuisine"](around:{radius},{lat},{lng});
 );
 out center 15;
 """
@@ -61,31 +84,29 @@ def parse_element(el):
     else:
         lat, lng = el.get("lat"), el.get("lon")
 
-    name = tags.get("name:zh") or tags.get("name") or tags.get("name:en") or "（無名稱）"
-    cuisine = tags.get("cuisine", "").replace(";", "、").replace("_", " ")
-    phone = tags.get("phone") or tags.get("contact:phone") or ""
-    website = tags.get("website") or tags.get("contact:website") or ""
+    name         = tags.get("name:zh") or tags.get("name") or tags.get("name:en") or "（無名稱）"
+    cuisine      = tags.get("cuisine", "").replace(";", "、").replace("_", " ")
+    phone        = tags.get("phone") or tags.get("contact:phone") or ""
+    website      = tags.get("website") or tags.get("contact:website") or ""
     opening_hours = tags.get("opening_hours", "")
-    addr = (tags.get("addr:full")
-            or (tags.get("addr:city", "") + tags.get("addr:street", "") + tags.get("addr:housenumber", ""))
-            or "")
-
-    osm_id = el.get("id")
+    addr = (
+        tags.get("addr:full")
+        or (tags.get("addr:city", "") + tags.get("addr:street", "") + tags.get("addr:housenumber", ""))
+        or ""
+    )
+    osm_id   = el.get("id")
     osm_type = el.get("type", "node")
-    osm_url = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
-    maps_search = f"https://www.google.com/maps/search/{requests.utils.quote(name)}/@{lat},{lng},17z" if lat and lng else ""
-
+    osm_url  = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+    maps_search = (
+        f"https://www.google.com/maps/search/{requests.utils.quote(name)}/@{lat},{lng},17z"
+        if lat and lng else ""
+    )
     return {
-        "name": name,
-        "cuisine": cuisine,
-        "phone": phone,
-        "website": website,
-        "opening_hours": opening_hours,
-        "address": addr,
-        "lat": lat,
-        "lng": lng,
-        "osm_url": osm_url,
-        "maps_search": maps_search,
+        "name": name, "cuisine": cuisine,
+        "phone": phone, "website": website,
+        "opening_hours": opening_hours, "address": addr,
+        "lat": lat, "lng": lng,
+        "osm_url": osm_url, "maps_search": maps_search,
     }
 
 
@@ -98,6 +119,13 @@ def overpass_post(query):
     )
 
 
+# ── 路由 ──────────────────────────────────────────
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # 消除瀏覽器 favicon 404 警告
+
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -105,49 +133,51 @@ def index():
 
 @app.route('/api/nearby-restaurants', methods=['GET'])
 def nearby_restaurants():
-    lat = request.args.get('lat', type=float)
-    lng = request.args.get('lng', type=float)
+    lat      = request.args.get('lat', type=float)
+    lng      = request.args.get('lng', type=float)
     category = request.args.get('category', '中式')
-    radius = request.args.get('radius', 1500, type=int)
+    radius   = request.args.get('radius', 1500, type=int)
 
+    # 定位失敗時使用測試座標
+    using_test_location = False
     if lat is None or lng is None:
-        return jsonify({"error": "缺少定位資訊（lat, lng）"}), 400
+        lat, lng = TEST_LAT, TEST_LNG
+        using_test_location = True
 
-    cuisines = CATEGORY_MAP.get(category, [category.lower()])
-    results = []
+    cuisines    = CATEGORY_MAP.get(category, [category.lower()])
+    results     = []
     is_fallback = False
 
     try:
-        # 精確搜尋
+        # 第一次搜尋：原始半徑 + 精確 cuisine
         resp = overpass_post(build_query(lat, lng, cuisines, radius))
         resp.raise_for_status()
-        elements = resp.json().get("elements", [])
-        results = [parse_element(el) for el in elements if el.get("tags", {}).get("name")]
+        results = [parse_element(el) for el in resp.json().get("elements", [])]
 
-        # 結果不足時擴大半徑
+        # 第二次搜尋：結果 < 3 → 擴大半徑 ×2，仍用精確 cuisine
         if len(results) < 3:
             resp2 = overpass_post(build_query(lat, lng, cuisines, min(radius * 2, 5000)))
             if resp2.ok:
                 seen = {r["osm_url"] for r in results}
                 for el in resp2.json().get("elements", []):
                     r = parse_element(el)
-                    if el.get("tags", {}).get("name") and r["osm_url"] not in seen:
+                    if r["osm_url"] not in seen:
                         results.append(r)
                         seen.add(r["osm_url"])
 
-        # 仍為空 → 回退查詢所有餐廳
+        # 回退搜尋：仍為空 → 原始半徑，拿掉 cuisine，找所有餐廳
         if not results:
             is_fallback = True
             resp3 = overpass_post(build_fallback_query(lat, lng, radius))
             if resp3.ok:
-                results = [parse_element(el) for el in resp3.json().get("elements", [])
-                           if el.get("tags", {}).get("name")]
+                results = [parse_element(el) for el in resp3.json().get("elements", [])]
 
         return jsonify({
             "category": category,
             "count": len(results),
             "results": results[:15],
             "is_fallback": is_fallback,
+            "using_test_location": using_test_location,
         })
 
     except requests.exceptions.Timeout:
@@ -175,7 +205,8 @@ def geocode():
 
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     print("🍽️  今天吃什麼？後端伺服器啟動中...")
-    print("✅  使用 OpenStreetMap Overpass API（完全免費，無需 API Key）")
-    print("🌐  開啟瀏覽器前往 http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("✅  OpenStreetMap Overpass API（免費，無需 API Key）")
+    print(f"🌐  http://localhost:{port}")
+    app.run(debug=True, host='0.0.0.0', port=port)
