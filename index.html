@@ -79,7 +79,7 @@ body::before{
 .wrap{ max-width:1080px; margin:0 auto; padding:0 22px 70px; position:relative; z-index:1; }
 
 /* ---- Header ---- */
-header{ text-align:center; padding:56px 0 36px; }
+header{ text-align:center; padding:56px 0 28px; }
 .big-emoji{ font-size:3.2rem; display:block; margin-bottom:6px;
   animation:bob 3s ease-in-out infinite; }
 @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
@@ -91,9 +91,31 @@ h1{
 }
 .sub{ margin-top:10px; color:var(--muted); font-size:.95rem; letter-spacing:.12em; }
 
+/* ===== MODE TABS ===== */
+.mode-tabs{
+  display:flex; gap:0; max-width:520px; margin:28px auto 0;
+  background:var(--bg2); border-radius:16px; padding:5px;
+  border:1px solid var(--border); box-shadow:0 2px 10px var(--shadow);
+}
+.mode-tab{
+  flex:1; padding:11px 0; border:none; background:transparent;
+  font-family:'Noto Serif TC',serif; font-size:.95rem; font-weight:700;
+  color:var(--muted); cursor:pointer; border-radius:12px;
+  transition:all .25s; letter-spacing:.05em;
+}
+.mode-tab.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; box-shadow:0 3px 14px var(--shadow);
+}
+.mode-tab:hover:not(.active){ color:var(--text); background:var(--surface); }
+
+/* ===== MODE PANELS ===== */
+.mode-panel{ display:none; }
+.mode-panel.active{ display:block; }
+
 /* ---- Main grid ---- */
 .main{ display:grid; grid-template-columns:1fr 1px 300px;
-  align-items:start; gap:36px; max-width:860px; margin:0 auto; }
+  align-items:start; gap:36px; max-width:860px; margin:0 auto; margin-top:40px; }
 .vline{ background:linear-gradient(to bottom,transparent,var(--border),transparent); width:1px; align-self:stretch; }
 
 /* ---- Wheel ---- */
@@ -184,7 +206,7 @@ input[type=range]::-webkit-slider-thumb{
 .search-btn:active:not(:disabled){ transform:translateY(0); }
 .search-btn:disabled{ opacity:.35; cursor:not-allowed; }
 
-/* ---- Results ---- */
+/* ---- Results (mode A) ---- */
 .results{ margin-top:46px; display:none; }
 .results.show{ display:block; }
 .rh{ font-family:'Noto Serif TC',serif; font-size:1.5rem; font-weight:700;
@@ -234,6 +256,180 @@ tbody td{ padding:13px 14px; vertical-align:middle; }
 .no-result.show,.err-state.show{ display:flex; }
 .big-icon{ font-size:2.8rem; }
 
+/* =====================================================
+   MODE B — 餐廳轉盤
+   ===================================================== */
+.mode-b-wrap{ max-width:860px; margin:40px auto 0; }
+
+/* 步驟1：類別選擇 */
+.step-header{
+  font-family:'Noto Serif TC',serif; font-size:1.1rem; font-weight:700;
+  color:var(--muted); letter-spacing:.06em; margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.step-num{
+  width:26px; height:26px; border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; font-size:.8rem; font-weight:700;
+  display:inline-flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+
+.cat-grid{
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+  margin-bottom:28px;
+}
+@media(max-width:600px){ .cat-grid{ grid-template-columns:repeat(3,1fr); } }
+.cat-btn{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:12px 6px; border-radius:14px;
+  border:2px solid var(--border); background:var(--surface);
+  cursor:pointer; transition:all .2s;
+  font-family:'Zen Maru Gothic',sans-serif;
+}
+.cat-btn:hover{ border-color:var(--accent2); transform:translateY(-2px); box-shadow:0 4px 14px var(--shadow); }
+.cat-btn.selected{
+  border-color:var(--accent);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; box-shadow:0 4px 18px var(--shadow);
+  transform:translateY(-2px);
+}
+.cat-btn .ce{ font-size:1.6rem; }
+.cat-btn .cl{ font-size:.78rem; font-weight:700; letter-spacing:.04em; }
+
+/* 步驟2: 狀態列 + 搜尋按鈕 */
+.b-settings{
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:16px 20px; margin-bottom:22px;
+  box-shadow:0 2px 10px var(--shadow);
+}
+.b-loc-row{ display:flex; align-items:center; gap:8px; font-size:.82rem; color:var(--muted); flex:1; min-width:160px; }
+.b-slider{ display:flex; align-items:center; gap:10px; font-size:.82rem; color:var(--muted); flex:1; min-width:180px; }
+.b-slider input{ flex:1; }
+.b-spin-btn{
+  padding:10px 24px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; font-family:'Noto Serif TC',serif; font-size:.9rem; font-weight:700;
+  cursor:pointer; box-shadow:0 3px 12px var(--shadow);
+  transition:transform .15s,opacity .3s;
+  white-space:nowrap; letter-spacing:.05em;
+}
+.b-spin-btn:hover:not(:disabled){ transform:translateY(-2px); }
+.b-spin-btn:disabled{ opacity:.35; cursor:not-allowed; }
+
+/* 載入狀態 */
+.b-loading{
+  display:none; flex-direction:column; align-items:center; gap:14px;
+  padding:48px; color:var(--muted); font-size:.9rem;
+  background:var(--surface); border-radius:20px; border:1px solid var(--border);
+}
+.b-loading.show{ display:flex; }
+
+/* ===== 餐廳轉盤本體 ===== */
+.restaurant-wheel-area{
+  display:none; flex-direction:column; align-items:center; gap:28px;
+  padding:32px 0;
+}
+.restaurant-wheel-area.show{ display:flex; }
+
+.rw-wrap{ position:relative; width:340px; height:340px; }
+.rw-pointer{
+  position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+  width:0; height:0;
+  border-left:15px solid transparent; border-right:15px solid transparent;
+  border-top:30px solid var(--accent); z-index:10;
+  filter:drop-shadow(0 2px 8px var(--shadow));
+}
+canvas#rwh{
+  width:340px; height:340px; border-radius:50%;
+  box-shadow:0 6px 32px var(--shadow), 0 0 0 5px var(--bg), 0 0 0 9px var(--ring);
+  transition:box-shadow .3s;
+}
+canvas#rwh.spinning{
+  box-shadow:0 12px 52px var(--shadow), 0 0 0 5px var(--bg), 0 0 0 9px var(--accent2), 0 0 28px var(--accent2);
+}
+
+.rw-spin-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; border:none; border-radius:40px;
+  padding:14px 42px; font-size:1.1rem;
+  font-family:'Noto Serif TC',serif; font-weight:700; letter-spacing:.1em;
+  cursor:pointer; box-shadow:0 5px 22px var(--shadow);
+  transition:transform .15s,box-shadow .15s,opacity .3s;
+}
+.rw-spin-btn:hover:not(:disabled){ transform:translateY(-3px); box-shadow:0 10px 30px var(--shadow); }
+.rw-spin-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* 選中店家資訊卡 */
+.shop-card{
+  display:none; width:100%; max-width:640px; margin:0 auto;
+  background:var(--surface); border:2px solid var(--accent);
+  border-radius:24px; padding:28px 32px;
+  box-shadow:0 8px 36px var(--shadow);
+  animation:pop .45s cubic-bezier(.34,1.56,.64,1);
+}
+.shop-card.show{ display:block; }
+.shop-card-header{
+  display:flex; align-items:flex-start; gap:16px; margin-bottom:20px;
+}
+.shop-emoji-badge{
+  width:56px; height:56px; border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.8rem; flex-shrink:0;
+}
+.shop-title{ flex:1; }
+.shop-name{
+  font-family:'Noto Serif TC',serif; font-size:1.6rem; font-weight:900;
+  background:linear-gradient(130deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; line-height:1.2; margin-bottom:6px;
+}
+.shop-meta{ display:flex; flex-wrap:wrap; gap:8px; }
+.shop-meta-item{ font-size:.8rem; color:var(--muted); display:flex; align-items:center; gap:4px; }
+
+.shop-info-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;
+}
+@media(max-width:520px){ .shop-info-grid{ grid-template-columns:1fr; } }
+.shop-info-cell{
+  background:var(--bg2); border-radius:12px; padding:12px 14px;
+}
+.sic-label{ font-size:.72rem; color:var(--muted); letter-spacing:.08em; margin-bottom:4px; }
+.sic-val{ font-size:.88rem; font-weight:600; word-break:break-word; }
+
+.shop-links{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+.shop-link-btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:20px; border:2px solid var(--accent);
+  color:var(--accent); text-decoration:none;
+  font-size:.85rem; font-weight:700; font-family:'Noto Serif TC',serif;
+  transition:all .2s; white-space:nowrap;
+}
+.shop-link-btn:hover{ background:var(--accent); color:#fff; }
+
+/* Google Map iframe */
+.map-section{ margin-top:4px; }
+.map-label{
+  font-family:'Noto Serif TC',serif; font-size:.85rem; font-weight:700;
+  color:var(--muted); letter-spacing:.08em; margin-bottom:10px;
+  display:flex; align-items:center; gap:6px;
+}
+.map-iframe-wrap{
+  border-radius:16px; overflow:hidden;
+  border:1px solid var(--border); box-shadow:0 4px 18px var(--shadow);
+  position:relative; height:380px;
+}
+.map-iframe-wrap iframe{
+  width:100%; height:100%; border:none;
+}
+.map-placeholder{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px;
+  background:var(--bg2); color:var(--muted); font-size:.9rem;
+}
+
 footer{ text-align:center; padding:22px; color:var(--muted);
   font-size:.75rem; letter-spacing:.05em;
   border-top:1px solid var(--border); margin-top:36px; }
@@ -242,6 +438,7 @@ footer{ text-align:center; padding:22px; color:var(--muted);
   .main{ grid-template-columns:1fr; gap:20px; }
   .vline{ display:none; }
   .wheel-wrap,canvas#wh{ width:260px; height:260px; }
+  .rw-wrap,canvas#rwh{ width:280px; height:280px; }
 }
 </style>
 </head>
@@ -261,86 +458,185 @@ footer{ text-align:center; padding:22px; color:var(--muted);
     <span class="big-emoji">🍜</span>
     <h1>今天吃什麼？</h1>
     <p class="sub">轉動命運之輪，讓美食來找你</p>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('a',this)">🎲 類別轉盤</button>
+      <button class="mode-tab"       onclick="switchMode('b',this)">🏪 餐廳轉盤</button>
+    </div>
   </header>
 
-  <div class="main">
-    <!-- Wheel -->
-    <div class="wheel-col">
-      <div class="wheel-wrap">
-        <div class="pointer"></div>
-        <canvas id="wh" width="300" height="300"></canvas>
+  <!-- ========== MODE A：類別轉盤（原版） ========== -->
+  <div class="mode-panel active" id="modeA">
+    <div class="main">
+      <!-- Wheel -->
+      <div class="wheel-col">
+        <div class="wheel-wrap">
+          <div class="pointer"></div>
+          <canvas id="wh" width="300" height="300"></canvas>
+        </div>
+        <button class="spin-btn" id="spinBtn" onclick="startSpin()">🎲 開始轉！</button>
       </div>
-      <button class="spin-btn" id="spinBtn" onclick="startSpin()">🎲 開始轉！</button>
+
+      <div class="vline"></div>
+
+      <!-- Side -->
+      <div class="side">
+        <div class="result-card" id="rcCard">
+          <span class="rc-emoji" id="rcEmoji">🍜</span>
+          <span class="rc-label">今日推薦</span>
+          <span class="rc-name" id="rcName">???</span>
+        </div>
+
+        <div class="settings-box">
+          <h3>⚙ 搜尋設定</h3>
+          <div class="loc-row">
+            <div class="dot wait" id="dot"></div>
+            <span id="locTxt">正在取得定位…</span>
+          </div>
+          <div class="slider-wrap">
+            <label><span>搜尋半徑</span><span id="rval">500 公尺</span></label>
+            <input type="range" id="rng" min="250" max="1000" step="50" value="500"
+              oninput="document.getElementById('rval').textContent=this.value+' 公尺'"/>
+          </div>
+          <button class="search-btn" id="searchBtn" onclick="manualSearch()" disabled>
+            🔍 重新搜尋此範圍
+          </button>
+          <div class="osm-note">
+            🗺 資料來源：<b>OpenStreetMap</b><br>
+            完全免費，無需任何 API Key
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="vline"></div>
+    <!-- Results Table -->
+    <div class="results" id="results">
+      <div class="rh">
+        附近的<span id="catLabel">餐廳</span>餐廳
+        <span class="tag" id="cntTag"></span>
+      </div>
+      <div class="fallback-note" id="fallbackNote"></div>
+      <div class="spinner" id="spinner"><div class="ring"></div><span>搜尋附近餐廳中…</span></div>
+      <div class="tbl-wrap" id="tblWrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>餐廳名稱</th>
+            <th>營業時間</th><th>地址</th><th>連結</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="no-result" id="noResult">
+        <div class="big-icon">😢</div>
+        <div>附近沒有找到相關餐廳</div>
+        <div style="font-size:.82rem">試試擴大搜尋半徑，或換個類別</div>
+      </div>
+      <div class="err-state" id="errState">
+        <div class="big-icon">⚠️</div>
+        <div id="errMsg">發生錯誤</div>
+      </div>
+    </div>
+  </div><!-- /modeA -->
 
-    <!-- Side -->
-    <div class="side">
-      <div class="result-card" id="rcCard">
-        <span class="rc-emoji" id="rcEmoji">🍜</span>
-        <span class="rc-label">今日推薦</span>
-        <span class="rc-name" id="rcName">???</span>
+  <!-- ========== MODE B：餐廳轉盤 ========== -->
+  <div class="mode-panel" id="modeB">
+    <div class="mode-b-wrap">
+
+      <!-- 步驟 1：選類別 -->
+      <div class="step-header">
+        <span class="step-num">1</span> 選擇餐廳類別
+      </div>
+      <div class="cat-grid" id="catGrid">
+        <!-- 由 JS 生成 -->
       </div>
 
-      <div class="settings-box">
-        <h3>⚙ 搜尋設定</h3>
-        <div class="loc-row">
-          <div class="dot wait" id="dot"></div>
-          <span id="locTxt">正在取得定位…</span>
+      <!-- 步驟 2：設定 + 搜尋 -->
+      <div class="step-header">
+        <span class="step-num">2</span> 確認定位與搜尋範圍
+      </div>
+      <div class="b-settings">
+        <div class="b-loc-row">
+          <div class="dot wait" id="bDot"></div>
+          <span id="bLocTxt">正在取得定位…</span>
         </div>
-        <div class="slider-wrap">
-          <label><span>搜尋半徑</span><span id="rval">500 公尺</span></label>
-          <input type="range" id="rng" min="250" max="1000" step="50" value="500"
-            oninput="document.getElementById('rval').textContent=this.value+' 公尺'"/>
+        <div class="b-slider">
+          <span>半徑</span>
+          <input type="range" id="bRng" min="250" max="1000" step="50" value="500"
+            oninput="document.getElementById('bRval').textContent=this.value+' 公尺'"/>
+          <span id="bRval" style="white-space:nowrap;min-width:62px">500 公尺</span>
         </div>
-        <button class="search-btn" id="searchBtn" onclick="manualSearch()" disabled>
-          🔍 重新搜尋此範圍
+        <button class="b-spin-btn" id="bFetchBtn" onclick="bFetchRestaurants()" disabled>
+          🔍 搜尋附近餐廳
         </button>
-        
-        <div class="osm-note">
-          🗺 資料來源：<b>OpenStreetMap</b><br>
-          完全免費，無需任何 API Key
+      </div>
+
+      <!-- 載入中 -->
+      <div class="b-loading" id="bLoading">
+        <div class="ring"></div>
+        <span id="bLoadTxt">搜尋附近餐廳中…</span>
+      </div>
+
+      <!-- 步驟 3：餐廳轉盤 -->
+      <div id="bWheelSection" style="display:none">
+        <div class="step-header" style="margin-top:10px">
+          <span class="step-num">3</span> 轉動餐廳命運之輪！
+          <span class="tag" id="bCntTag" style="margin-left:4px"></span>
+        </div>
+
+        <div class="restaurant-wheel-area show" id="rwArea">
+          <div class="rw-wrap">
+            <div class="rw-pointer"></div>
+            <canvas id="rwh" width="340" height="340"></canvas>
+          </div>
+          <button class="rw-spin-btn" id="rwSpinBtn" onclick="rwStartSpin()">🎰 轉動！</button>
+        </div>
+
+        <!-- 店家資訊卡 -->
+        <div class="shop-card" id="shopCard">
+          <div class="shop-card-header">
+            <div class="shop-emoji-badge" id="shopEmojiBadge">🍽️</div>
+            <div class="shop-title">
+              <div class="shop-name" id="shopName">餐廳名稱</div>
+              <div class="shop-meta" id="shopMeta"></div>
+            </div>
+          </div>
+
+          <div class="shop-info-grid" id="shopInfoGrid"></div>
+
+          <div class="shop-links" id="shopLinks"></div>
+
+          <!-- Google Map -->
+          <div class="map-section">
+            <div class="map-label">📍 地圖位置</div>
+            <div class="map-iframe-wrap">
+              <iframe id="shopMapFrame" src="" allowfullscreen loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Results -->
-  <div class="results" id="results">
-    <div class="rh">
-      附近的<span id="catLabel">餐廳</span>餐廳
-      <span class="tag" id="cntTag"></span>
+      <!-- 找不到 -->
+      <div class="no-result" id="bNoResult" style="margin-top:16px">
+        <div class="big-icon">😢</div>
+        <div>附近沒有找到相關餐廳</div>
+        <div style="font-size:.82rem">試試擴大搜尋半徑，或換個類別</div>
+      </div>
+      <div class="err-state" id="bErrState" style="margin-top:16px">
+        <div class="big-icon">⚠️</div>
+        <div id="bErrMsg">發生錯誤</div>
+      </div>
+
     </div>
-    <div class="fallback-note" id="fallbackNote">
-      ⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考
-    </div>
-    <div class="spinner" id="spinner"><div class="ring"></div><span>搜尋附近餐廳中…</span></div>
-    <div class="tbl-wrap" id="tblWrap">
-      <table>
-        <thead><tr>
-          <th>#</th><th>餐廳名稱</th>
-          <th>營業時間</th><th>地址</th><th>連結</th>
-        </tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="no-result" id="noResult">
-      <div class="big-icon">😢</div>
-      <div>附近沒有找到相關餐廳</div>
-      <div style="font-size:.82rem">試試擴大搜尋半徑，或換個類別</div>
-    </div>
-    <div class="err-state" id="errState">
-      <div class="big-icon">⚠️</div>
-      <div id="errMsg">發生錯誤</div>
-    </div>
-  </div>
-</div>
+  </div><!-- /modeB -->
+
+</div><!-- /wrap -->
 
 <footer>🍽️ 今天吃什麼？ &nbsp;|&nbsp; 地圖資料 © OpenStreetMap contributors</footer>
 
 <script>
-/* ===== Wheel segments ===== */
+/* ===== Shared data ===== */
 const SEG = [
   {label:"中式",  emoji:"🥢", color:"#E8440A"},
   {label:"日式",  emoji:"🍱", color:"#FF8C42"},
@@ -354,24 +650,64 @@ const SEG = [
   {label:"墨西哥",emoji:"🌮", color:"#EF4444"},
 ];
 
-const canvas = document.getElementById('wh');
-const ctx = canvas.getContext('2d');
-const originalW = canvas.width;
-const originalH = canvas.height;
-const dpr = window.devicePixelRatio || 1;
-canvas.width = originalW * dpr;
-canvas.height = originalH * dpr;
-canvas.style.width = originalW + 'px';
-canvas.style.height = originalH + 'px';
-ctx.scale(dpr, dpr);
-
-const W = originalW, H = originalH;
-const CX = W/2, CY = H/2, R = W/2 - 8;
-
-let angle = 0, spinning = false;
 let userLat = null, userLng = null;
 
-/* ===== Draw ===== */
+/* ===== Geolocation (shared) ===== */
+function setupGeo(dotId, txtId) {
+  const dot = document.getElementById(dotId);
+  const txt = document.getElementById(txtId);
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        userLat = p.coords.latitude; userLng = p.coords.longitude;
+        dot.className = 'dot ok';
+        txt.textContent = `已定位（${userLat.toFixed(4)}, ${userLng.toFixed(4)}）`;
+        // sync both panels
+        document.getElementById('dot').className='dot ok';
+        document.getElementById('bDot').className='dot ok';
+        document.getElementById('locTxt').textContent = txt.textContent;
+        document.getElementById('bLocTxt').textContent = txt.textContent;
+      },
+      () => {
+        dot.className = 'dot err';
+        const msg = '⚠️ 定位失敗，使用測試座標（板橋車站）';
+        document.getElementById('dot').className='dot err';
+        document.getElementById('bDot').className='dot err';
+        document.getElementById('locTxt').textContent = msg;
+        document.getElementById('bLocTxt').textContent = msg;
+      },
+      { timeout: 8000 }
+    );
+  } else {
+    const msg = '⚠️ 瀏覽器不支援定位，使用測試座標（板橋車站）';
+    ['dot','bDot'].forEach(id=>{document.getElementById(id).className='dot err';});
+    ['locTxt','bLocTxt'].forEach(id=>{document.getElementById(id).textContent=msg;});
+  }
+}
+setupGeo('dot','locTxt');
+
+/* ===== Mode switching ===== */
+function switchMode(m, el) {
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.mode-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mode' + m.toUpperCase()).classList.add('active');
+}
+
+/* ================================================
+   MODE A — 類別轉盤（原版完整保留）
+   =============================================== */
+const canvas = document.getElementById('wh');
+const ctx = canvas.getContext('2d');
+const originalW = canvas.width, originalH = canvas.height;
+const dpr = window.devicePixelRatio || 1;
+canvas.width = originalW * dpr; canvas.height = originalH * dpr;
+canvas.style.width = originalW + 'px'; canvas.style.height = originalH + 'px';
+ctx.scale(dpr, dpr);
+const W = originalW, H = originalH, CX = W/2, CY = H/2, R = W/2 - 8;
+
+let angle = 0, spinning = false;
+
 function draw(a) {
   ctx.clearRect(0,0,W,H);
   const n = SEG.length, arc = 2*Math.PI/n;
@@ -381,7 +717,6 @@ function draw(a) {
     ctx.arc(CX,CY,R,s0,s1); ctx.closePath();
     ctx.fillStyle = s.color; ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth=2; ctx.stroke();
-
     ctx.save();
     ctx.translate(CX,CY); ctx.rotate(s0+arc/2);
     ctx.textAlign='right';
@@ -392,7 +727,6 @@ function draw(a) {
     ctx.font='15px serif'; ctx.fillText(s.emoji, R-10, -11);
     ctx.restore();
   });
-  // centre
   ctx.beginPath(); ctx.arc(CX,CY,26,0,2*Math.PI);
   ctx.fillStyle='#fff'; ctx.fill();
   ctx.strokeStyle='rgba(0,0,0,.08)'; ctx.lineWidth=2; ctx.stroke();
@@ -401,7 +735,6 @@ function draw(a) {
 }
 draw(0);
 
-/* ===== Spin ===== */
 function startSpin() {
   if (spinning) return;
   spinning = true;
@@ -410,12 +743,10 @@ function startSpin() {
   canvas.classList.add('spinning');
   document.getElementById('rcCard').classList.remove('show');
   document.getElementById('results').classList.remove('show');
-
   const extra = (5 + Math.random()*5) * 2 * Math.PI;
   const target = angle + extra + Math.random() * 2 * Math.PI;
   const dur = 4200 + Math.random()*1000;
   const t0 = performance.now(), a0 = angle;
-
   function ease(t){ return 1 - Math.pow(1-t,4); }
   function frame(now) {
     const t = Math.min((now-t0)/dur, 1);
@@ -445,96 +776,45 @@ function onEnd() {
   document.getElementById('rcName').textContent  = seg.label;
   const card = document.getElementById('rcCard');
   card.classList.remove('show'); void card.offsetWidth; card.classList.add('show');
-
-  // 問題②：重新轉時先隱藏店家總數
   const cntTag = document.getElementById('cntTag');
-  cntTag.textContent = '';
-  cntTag.style.display = 'none';
-
-  // 記住目前類別，供手動重新搜尋使用
+  cntTag.textContent = ''; cntTag.style.display = 'none';
   window._currentCategory = seg.label;
-
-  // 啟用「重新搜尋此範圍」按鈕
   document.getElementById('searchBtn').disabled = false;
-
   fetchRestaurants(seg.label);
 }
 
-/* ===== Geolocation ===== */
-const dot = document.getElementById('dot');
-const locTxt = document.getElementById('locTxt');
-
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    p => {
-      userLat = p.coords.latitude; userLng = p.coords.longitude;
-      dot.className='dot ok';
-      locTxt.textContent=`已定位（${userLat.toFixed(4)}, ${userLng.toFixed(4)}）`;
-    },
-    () => {
-      dot.className='dot err';
-      locTxt.textContent='⚠️ 定位失敗，使用測試座標（板橋車站）';
-    },
-    { timeout: 8000 }
-  );
-} else {
-  dot.className='dot err';
-  locTxt.textContent='⚠️ 瀏覽器不支援定位，使用測試座標（板橋車站）';
-}
-
-// 問題①：半徑變更時只更新顯示數字，不自動搜尋
-let _radiusTimer = null;
 function onRadiusChange(val) {
   document.getElementById('rval').textContent = val + ' 公尺';
 }
 
-// 手動按下「重新搜尋此範圍」按鈕
 function manualSearch() {
   if (!window._currentCategory) return;
-
-  // 先清空間數
   const cntTag = document.getElementById('cntTag');
-  cntTag.textContent = '';
-  cntTag.style.display = 'none';
-
+  cntTag.textContent = ''; cntTag.style.display = 'none';
   fetchRestaurants(window._currentCategory);
 }
 
-/* ===== Fetch ===== */
-// 請求計數器：每次發出新請求就 +1，回來時比對是否為最新請求
 let _fetchSeq = 0;
-
 async function fetchRestaurants(cat) {
-  const mySeq = ++_fetchSeq;  // 記住本次請求的編號
-
+  const mySeq = ++_fetchSeq;
   const rs = document.getElementById('results');
   const sp = document.getElementById('spinner');
   const tw = document.getElementById('tblWrap');
   const nr = document.getElementById('noResult');
   const er = document.getElementById('errState');
   const fb = document.getElementById('fallbackNote');
-
-  rs.classList.add('show');
-  sp.classList.add('show');
+  rs.classList.add('show'); sp.classList.add('show');
   [tw,nr,er,fb].forEach(el=>el.classList.remove('show'));
   document.getElementById('catLabel').textContent = cat;
-
   const radius = document.getElementById('rng').value;
   const latParam = userLat ? `&lat=${userLat}` : '';
   const lngParam = userLng ? `&lng=${userLng}` : '';
-
   try {
     const res = await fetch(`/api/nearby-restaurants?category=${encodeURIComponent(cat)}&radius=${radius}${latParam}${lngParam}`);
     const data = await res.json();
-
-    // 如果這不是最新的請求，直接丟棄結果
     if (mySeq !== _fetchSeq) return;
-
     sp.classList.remove('show');
-
     if (!res.ok) { er.classList.add('show'); document.getElementById('errMsg').textContent=data.error||'伺服器錯誤'; return; }
-
-    // 問題③：只有 is_fallback=true 且結果不為空時才顯示警告
     if (data.using_test_location) {
       fb.textContent = '📍 使用測試座標（板橋車站）— 請允許瀏覽器定位以顯示您附近的餐廳';
       fb.classList.add('show');
@@ -542,14 +822,10 @@ async function fetchRestaurants(cat) {
       fb.textContent = '⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考';
       fb.classList.add('show');
     }
-
-    // 問題②：有結果才更新店家總數並顯示底色
     const cntTag = document.getElementById('cntTag');
     cntTag.textContent = `${data.count} 間`;
     cntTag.style.display = 'inline-block';
-
     if (!data.results || data.results.length === 0) { nr.classList.add('show'); return; }
-
     document.getElementById('tbody').innerHTML = data.results.map((r,i)=>`
       <tr>
         <td style="color:var(--muted);font-size:.82rem">${i+1}</td>
@@ -564,23 +840,244 @@ async function fetchRestaurants(cat) {
           ${r.website?`<a class="link-btn" href="${r.website}" target="_blank" rel="noopener">🔗 官網</a>`:''}
         </td>
       </tr>`).join('');
-
     tw.classList.add('show');
   } catch(e) {
-    if (mySeq !== _fetchSeq) return;  // 舊請求的錯誤也忽略
+    if (mySeq !== _fetchSeq) return;
     sp.classList.remove('show'); er.classList.add('show');
     document.getElementById('errMsg').textContent=`無法連線至後端（${e.message}）`;
   }
 }
 
+/* ================================================
+   MODE B — 餐廳轉盤
+   =============================================== */
+
+// 類別按鈕
+let bSelectedCat = null;
+
+(function buildCatGrid() {
+  const grid = document.getElementById('catGrid');
+  SEG.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.dataset.label = s.label;
+    btn.innerHTML = `<span class="ce">${s.emoji}</span><span class="cl">${s.label}</span>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      bSelectedCat = s.label;
+      document.getElementById('bFetchBtn').disabled = false;
+    };
+    grid.appendChild(btn);
+  });
+})();
+
+// 餐廳清單
+let bRestaurants = [];
+let bWheelAngle = 0, bWheelSpinning = false;
+
+// Fetch
+let _bFetchSeq = 0;
+async function bFetchRestaurants() {
+  if (!bSelectedCat) return;
+  const mySeq = ++_bFetchSeq;
+
+  // reset UI
+  document.getElementById('bWheelSection').style.display = 'none';
+  document.getElementById('bNoResult').classList.remove('show');
+  document.getElementById('bErrState').classList.remove('show');
+  document.getElementById('shopCard').classList.remove('show');
+  document.getElementById('bLoading').classList.add('show');
+  document.getElementById('bLoadTxt').textContent = `搜尋附近${bSelectedCat}餐廳中…`;
+
+  const radius = document.getElementById('bRng').value;
+  const latParam = userLat ? `&lat=${userLat}` : '';
+  const lngParam = userLng ? `&lng=${userLng}` : '';
+
+  try {
+    const res = await fetch(`/api/nearby-restaurants?category=${encodeURIComponent(bSelectedCat)}&radius=${radius}${latParam}${lngParam}`);
+    const data = await res.json();
+    if (mySeq !== _bFetchSeq) return;
+    document.getElementById('bLoading').classList.remove('show');
+
+    if (!res.ok) {
+      document.getElementById('bErrState').classList.add('show');
+      document.getElementById('bErrMsg').textContent = data.error || '伺服器錯誤';
+      return;
+    }
+
+    bRestaurants = data.results || [];
+    if (bRestaurants.length === 0) {
+      document.getElementById('bNoResult').classList.add('show');
+      return;
+    }
+
+    document.getElementById('bCntTag').textContent = `${bRestaurants.length} 間`;
+    document.getElementById('bWheelSection').style.display = 'block';
+    bWheelAngle = 0;
+    bWheelSpinning = false;
+    document.getElementById('rwSpinBtn').disabled = false;
+    document.getElementById('shopCard').classList.remove('show');
+    rwDraw(bWheelAngle);
+  } catch(e) {
+    if (mySeq !== _bFetchSeq) return;
+    document.getElementById('bLoading').classList.remove('show');
+    document.getElementById('bErrState').classList.add('show');
+    document.getElementById('bErrMsg').textContent = `無法連線至後端（${e.message}）`;
+  }
+}
+
+/* ---- 餐廳轉盤 Canvas ---- */
+const rwCanvas = document.getElementById('rwh');
+const rwCtx = rwCanvas.getContext('2d');
+const rwOrigW = rwCanvas.width, rwOrigH = rwCanvas.height;
+const rwDpr = window.devicePixelRatio || 1;
+rwCanvas.width = rwOrigW * rwDpr; rwCanvas.height = rwOrigH * rwDpr;
+rwCanvas.style.width = rwOrigW + 'px'; rwCanvas.style.height = rwOrigH + 'px';
+rwCtx.scale(rwDpr, rwDpr);
+const RW = rwOrigW, RH = rwOrigH, RCX = RW/2, RCY = RH/2, RR = RW/2 - 10;
+
+// 顏色池
+const RW_COLORS = [
+  '#E8440A','#FF8C42','#E83A6A','#3B82F6','#22C55E',
+  '#A855F7','#F59E0B','#06B6D4','#10B981','#EF4444'
+];
+
+function rwDraw(a) {
+  rwCtx.clearRect(0,0,RW,RH);
+  if (!bRestaurants.length) return;
+  const n = bRestaurants.length, arc = 2*Math.PI/n;
+  bRestaurants.forEach((r,i) => {
+    const s0 = a + i*arc, s1 = s0 + arc;
+    const color = RW_COLORS[i % RW_COLORS.length];
+    rwCtx.beginPath(); rwCtx.moveTo(RCX,RCY);
+    rwCtx.arc(RCX,RCY,RR,s0,s1); rwCtx.closePath();
+    rwCtx.fillStyle = color; rwCtx.fill();
+    rwCtx.strokeStyle = 'rgba(255,255,255,.4)'; rwCtx.lineWidth=2; rwCtx.stroke();
+
+    // 文字
+    rwCtx.save();
+    rwCtx.translate(RCX,RCY); rwCtx.rotate(s0+arc/2);
+    rwCtx.textAlign='right';
+    rwCtx.shadowColor='rgba(0,0,0,.4)'; rwCtx.shadowBlur=4;
+    rwCtx.fillStyle='#fff';
+
+    // 店名截斷
+    const maxLen = n <= 4 ? 10 : n <= 6 ? 7 : 5;
+    let name = r.name || '餐廳';
+    if (name.length > maxLen) name = name.slice(0,maxLen-1)+'…';
+
+    // 字體大小依扇形數調整
+    const fontSize = n <= 4 ? 14 : n <= 6 ? 12 : 11;
+    rwCtx.font = `bold ${fontSize}px "Zen Maru Gothic",sans-serif`;
+    rwCtx.fillText(name, RR-14, 5);
+    rwCtx.restore();
+  });
+  // 中心圓
+  rwCtx.beginPath(); rwCtx.arc(RCX,RCY,28,0,2*Math.PI);
+  rwCtx.fillStyle='#fff'; rwCtx.fill();
+  rwCtx.strokeStyle='rgba(0,0,0,.08)'; rwCtx.lineWidth=2; rwCtx.stroke();
+  rwCtx.font='20px serif'; rwCtx.textAlign='center'; rwCtx.textBaseline='middle';
+  rwCtx.fillStyle='#444'; rwCtx.fillText('🍽️',RCX,RCY);
+}
+
+function rwGetResult() {
+  const n = bRestaurants.length, arc = 2*Math.PI/n;
+  const norm = ((-bWheelAngle - Math.PI/2) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  return bRestaurants[Math.floor(norm/arc) % n];
+}
+
+function rwStartSpin() {
+  if (bWheelSpinning || !bRestaurants.length) return;
+  bWheelSpinning = true;
+  document.getElementById('rwSpinBtn').disabled = true;
+  document.getElementById('shopCard').classList.remove('show');
+  rwCanvas.classList.add('spinning');
+
+  const extra = (6 + Math.random()*6) * 2 * Math.PI;
+  const target = bWheelAngle + extra + Math.random() * 2 * Math.PI;
+  const dur = 4500 + Math.random()*1200;
+  const t0 = performance.now(), a0 = bWheelAngle;
+
+  function ease(t){ return 1 - Math.pow(1-t,4); }
+  function frame(now) {
+    const t = Math.min((now-t0)/dur, 1);
+    bWheelAngle = a0 + (target-a0)*ease(t);
+    rwDraw(bWheelAngle);
+    if (t < 1) { requestAnimationFrame(frame); }
+    else {
+      bWheelAngle = target % (2*Math.PI);
+      bWheelSpinning = false;
+      rwCanvas.classList.remove('spinning');
+      document.getElementById('rwSpinBtn').disabled = false;
+      rwOnEnd();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function rwOnEnd() {
+  const r = rwGetResult();
+  if (!r) return;
+
+  // 找對應的 SEG emoji
+  const seg = SEG.find(s => s.label === bSelectedCat) || {emoji:'🍽️'};
+
+  // 填充店家資訊卡
+  document.getElementById('shopEmojiBadge').textContent = seg.emoji;
+  document.getElementById('shopName').textContent = r.name || '（無名稱）';
+
+  // meta tags
+  const metaEl = document.getElementById('shopMeta');
+  metaEl.innerHTML = '';
+  if (r.opening_hours) metaEl.innerHTML += `<span class="shop-meta-item">🕐 ${esc(r.opening_hours)}</span>`;
+
+  // info grid
+  const infoEl = document.getElementById('shopInfoGrid');
+  const infoCells = [
+    {label:'地址', val: r.address || '—', icon:'📍'},
+    {label:'電話', val: r.phone || '—', icon:'📞'},
+  ];
+  infoEl.innerHTML = infoCells.map(c=>`
+    <div class="shop-info-cell">
+      <div class="sic-label">${c.icon} ${c.label}</div>
+      <div class="sic-val">${esc(c.val)}</div>
+    </div>`).join('');
+
+  // links
+  const linksEl = document.getElementById('shopLinks');
+  let linksHtml = '';
+  if (r.maps_search) linksHtml += `<a class="shop-link-btn" href="${r.maps_search}" target="_blank" rel="noopener">🗺 Google 地圖</a>`;
+  if (r.osm_url)     linksHtml += `<a class="shop-link-btn" href="${r.osm_url}" target="_blank" rel="noopener">🌐 OSM</a>`;
+  if (r.website)     linksHtml += `<a class="shop-link-btn" href="${r.website}" target="_blank" rel="noopener">🔗 官網</a>`;
+  linksEl.innerHTML = linksHtml;
+
+  // Google Maps embed (search by name + lat/lng)
+  const mapFrame = document.getElementById('shopMapFrame');
+  if (r.name) {
+    const q = encodeURIComponent(r.name + (r.address ? ' ' + r.address : ''));
+    mapFrame.src = `https://maps.google.com/maps?q=${q}&output=embed&hl=zh-TW`;
+  } else {
+    mapFrame.src = '';
+  }
+
+  // 顯示
+  const card = document.getElementById('shopCard');
+  card.classList.remove('show'); void card.offsetWidth; card.classList.add('show');
+
+  // scroll to card
+  setTimeout(()=>card.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+}
+
+/* ===== Utilities ===== */
 function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
-/* ===== Theme ===== */
 function setTheme(t, el) {
   document.body.setAttribute('data-theme',t);
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
   draw(angle);
+  if (bRestaurants.length) rwDraw(bWheelAngle);
 }
 </script>
 </body>
