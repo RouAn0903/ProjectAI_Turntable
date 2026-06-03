@@ -102,7 +102,7 @@ def parse_element(el):
         if lat and lng else ""
     )
     return {
-        "name": name, "cuisine": cuisine,
+        "name": name,
         "phone": phone, "website": website,
         "opening_hours": opening_hours, "address": addr,
         "lat": lat, "lng": lng,
@@ -146,7 +146,6 @@ def nearby_restaurants():
 
     cuisines    = CATEGORY_MAP.get(category, [category.lower()])
     results     = []
-    is_fallback = False
 
     try:
         # 第一次搜尋：原始半徑 + 精確 cuisine
@@ -165,18 +164,11 @@ def nearby_restaurants():
                         results.append(r)
                         seen.add(r["osm_url"])
 
-        # 回退搜尋：仍為空 → 原始半徑，拿掉 cuisine，找所有餐廳
-        if not results:
-            is_fallback = True
-            resp3 = overpass_post(build_fallback_query(lat, lng, radius))
-            if resp3.ok:
-                results = [parse_element(el) for el in resp3.json().get("elements", [])]
-
+        # 找不到就直接回傳空結果，不再回退搜尋所有餐廳
         return jsonify({
             "category": category,
             "count": len(results),
-            "results": results[:15],
-            "is_fallback": is_fallback,
+            "results": results,
             "using_test_location": using_test_location,
         })
 

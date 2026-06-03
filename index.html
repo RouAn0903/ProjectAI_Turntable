@@ -171,6 +171,19 @@ input[type=range]::-webkit-slider-thumb{
 
 .osm-note{ font-size:.72rem; color:var(--muted); line-height:1.6; }
 
+.search-btn{
+  width:100%; padding:10px 0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; border:none; border-radius:12px;
+  font-size:.9rem; font-family:'Noto Serif TC',serif; font-weight:700;
+  letter-spacing:.06em; cursor:pointer;
+  box-shadow:0 3px 12px var(--shadow);
+  transition:transform .15s, box-shadow .15s, opacity .3s;
+}
+.search-btn:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 6px 20px var(--shadow); }
+.search-btn:active:not(:disabled){ transform:translateY(0); }
+.search-btn:disabled{ opacity:.35; cursor:not-allowed; }
+
 /* ---- Results ---- */
 .results{ margin-top:46px; display:none; }
 .results.show{ display:block; }
@@ -279,8 +292,12 @@ footer{ text-align:center; padding:22px; color:var(--muted);
         <div class="slider-wrap">
           <label><span>搜尋半徑</span><span id="rval">500 公尺</span></label>
           <input type="range" id="rng" min="250" max="1000" step="50" value="500"
-            oninput="onRadiusChange(this.value)"/>
+            oninput="document.getElementById('rval').textContent=this.value+' 公尺'"/>
         </div>
+        <button class="search-btn" id="searchBtn" onclick="manualSearch()" disabled>
+          🔍 重新搜尋此範圍
+        </button>
+        
         <div class="osm-note">
           🗺 資料來源：<b>OpenStreetMap</b><br>
           完全免費，無需任何 API Key
@@ -293,7 +310,7 @@ footer{ text-align:center; padding:22px; color:var(--muted);
   <div class="results" id="results">
     <div class="rh">
       附近的<span id="catLabel">餐廳</span>餐廳
-      <span class="tag" id="cntTag">0 間</span>
+      <span class="tag" id="cntTag"></span>
     </div>
     <div class="fallback-note" id="fallbackNote">
       ⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考
@@ -302,7 +319,7 @@ footer{ text-align:center; padding:22px; color:var(--muted);
     <div class="tbl-wrap" id="tblWrap">
       <table>
         <thead><tr>
-          <th>#</th><th>餐廳名稱</th><th>料理類型</th>
+          <th>#</th><th>餐廳名稱</th>
           <th>營業時間</th><th>地址</th><th>連結</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -389,6 +406,7 @@ function startSpin() {
   if (spinning) return;
   spinning = true;
   document.getElementById('spinBtn').disabled = true;
+  document.getElementById('searchBtn').disabled = true;
   canvas.classList.add('spinning');
   document.getElementById('rcCard').classList.remove('show');
   document.getElementById('results').classList.remove('show');
@@ -429,10 +447,15 @@ function onEnd() {
   card.classList.remove('show'); void card.offsetWidth; card.classList.add('show');
 
   // 問題②：重新轉時先隱藏店家總數
-  document.getElementById('cntTag').textContent = '';
+  const cntTag = document.getElementById('cntTag');
+  cntTag.textContent = '';
+  cntTag.style.display = 'none';
 
-  // 記住目前類別，供半徑變更時重新查詢
+  // 記住目前類別，供手動重新搜尋使用
   window._currentCategory = seg.label;
+
+  // 啟用「重新搜尋此範圍」按鈕
+  document.getElementById('searchBtn').disabled = false;
 
   fetchRestaurants(seg.label);
 }
@@ -459,16 +482,31 @@ if (navigator.geolocation) {
   locTxt.textContent='⚠️ 瀏覽器不支援定位，使用測試座標（板橋車站）';
 }
 
-// 問題①：半徑變更時，若已有轉盤結果則重新查詢
+// 問題①：半徑變更時只更新顯示數字，不自動搜尋
+let _radiusTimer = null;
 function onRadiusChange(val) {
   document.getElementById('rval').textContent = val + ' 公尺';
-  if (window._currentCategory) {
-    fetchRestaurants(window._currentCategory);
-  }
+}
+
+// 手動按下「重新搜尋此範圍」按鈕
+function manualSearch() {
+  if (!window._currentCategory) return;
+
+  // 先清空間數
+  const cntTag = document.getElementById('cntTag');
+  cntTag.textContent = '';
+  cntTag.style.display = 'none';
+
+  fetchRestaurants(window._currentCategory);
 }
 
 /* ===== Fetch ===== */
+// 請求計數器：每次發出新請求就 +1，回來時比對是否為最新請求
+let _fetchSeq = 0;
+
 async function fetchRestaurants(cat) {
+  const mySeq = ++_fetchSeq;  // 記住本次請求的編號
+
   const rs = document.getElementById('results');
   const sp = document.getElementById('spinner');
   const tw = document.getElementById('tblWrap');
@@ -488,6 +526,10 @@ async function fetchRestaurants(cat) {
   try {
     const res = await fetch(`/api/nearby-restaurants?category=${encodeURIComponent(cat)}&radius=${radius}${latParam}${lngParam}`);
     const data = await res.json();
+
+    // 如果這不是最新的請求，直接丟棄結果
+    if (mySeq !== _fetchSeq) return;
+
     sp.classList.remove('show');
 
     if (!res.ok) { er.classList.add('show'); document.getElementById('errMsg').textContent=data.error||'伺服器錯誤'; return; }
@@ -501,8 +543,10 @@ async function fetchRestaurants(cat) {
       fb.classList.add('show');
     }
 
-    // 問題②：有結果才更新店家總數
-    document.getElementById('cntTag').textContent = `${data.count} 間`;
+    // 問題②：有結果才更新店家總數並顯示底色
+    const cntTag = document.getElementById('cntTag');
+    cntTag.textContent = `${data.count} 間`;
+    cntTag.style.display = 'inline-block';
 
     if (!data.results || data.results.length === 0) { nr.classList.add('show'); return; }
 
@@ -510,7 +554,6 @@ async function fetchRestaurants(cat) {
       <tr>
         <td style="color:var(--muted);font-size:.82rem">${i+1}</td>
         <td><div class="rname">${esc(r.name)}</div></td>
-        <td style="font-size:.82rem;color:var(--muted)">${esc(r.cuisine)||'—'}</td>
         <td>${r.opening_hours
           ? `<span class="badge hours" title="${esc(r.opening_hours)}">${esc(r.opening_hours)}</span>`
           : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
@@ -524,6 +567,7 @@ async function fetchRestaurants(cat) {
 
     tw.classList.add('show');
   } catch(e) {
+    if (mySeq !== _fetchSeq) return;  // 舊請求的錯誤也忽略
     sp.classList.remove('show'); er.classList.add('show');
     document.getElementById('errMsg').textContent=`無法連線至後端（${e.message}）`;
   }
