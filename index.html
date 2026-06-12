@@ -440,6 +440,294 @@ footer{ text-align:center; padding:22px; color:var(--muted);
   .wheel-wrap,canvas#wh{ width:260px; height:260px; }
   .rw-wrap,canvas#rwh{ width:280px; height:280px; }
 }
+
+
+/* =====================================================
+   MOBILE FIX — 手機版介面修正
+   目的：避免按鈕、轉盤、搜尋設定區在手機寬度跑版
+   ===================================================== */
+@media (max-width: 680px) {
+  body{
+    overflow-x:hidden;
+  }
+
+  .theme-bar{
+    position:relative;
+    top:auto;
+    right:auto;
+    width:max-content;
+    max-width:calc(100vw - 28px);
+    margin:12px auto 0;
+    justify-content:center;
+    z-index:50;
+  }
+
+  .wrap{
+    width:100%;
+    padding:0 14px 48px;
+  }
+
+  header{
+    padding:24px 0 22px;
+  }
+
+  .big-emoji{
+    font-size:2.5rem;
+  }
+
+  h1{
+    font-size:clamp(2rem, 10vw, 3rem);
+    letter-spacing:.03em;
+  }
+
+  .sub{
+    font-size:.82rem;
+    letter-spacing:.06em;
+    line-height:1.5;
+    padding:0 8px;
+  }
+
+  .mode-tabs{
+    width:100%;
+    max-width:none;
+    margin:20px auto 0;
+  }
+
+  .mode-tab{
+    font-size:.86rem;
+    padding:10px 4px;
+    letter-spacing:0;
+  }
+
+  .main{
+    grid-template-columns:1fr;
+    gap:22px;
+    margin-top:26px;
+    max-width:100%;
+  }
+
+  .vline{
+    display:none;
+  }
+
+  .wheel-col{
+    width:100%;
+  }
+
+  .wheel-wrap,
+  canvas#wh{
+    width:min(78vw, 260px) !important;
+    height:min(78vw, 260px) !important;
+  }
+
+  .spin-btn,
+  .search-btn,
+  .b-spin-btn,
+  .rw-spin-btn{
+    width:100%;
+    max-width:320px;
+    min-height:46px;
+    padding:12px 18px;
+    font-size:1rem;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  .side{
+    width:100%;
+  }
+
+  .result-card,
+  .settings-box{
+    width:100%;
+  }
+
+  .settings-box{
+    padding:18px;
+  }
+
+  .loc-row,
+  .b-loc-row{
+    align-items:flex-start;
+    line-height:1.5;
+    word-break:break-word;
+  }
+
+  .slider-wrap label{
+    font-size:.82rem;
+  }
+
+  input[type=range]{
+    height:6px;
+  }
+
+  input[type=range]::-webkit-slider-thumb{
+    width:22px;
+    height:22px;
+  }
+
+  .results{
+    margin-top:28px;
+  }
+
+  .rh{
+    font-size:1.18rem;
+    line-height:1.5;
+  }
+
+  .tbl-wrap{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  table{
+    min-width:680px;
+    font-size:.82rem;
+  }
+
+  .mode-b-wrap{
+    width:100%;
+    margin:28px auto 0;
+  }
+
+  .step-header{
+    font-size:1rem;
+    line-height:1.5;
+    flex-wrap:wrap;
+  }
+
+  .cat-grid{
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+
+  .cat-btn{
+    min-height:76px;
+    padding:12px 6px;
+  }
+
+  .cat-btn .ce{
+    font-size:1.45rem;
+  }
+
+  .cat-btn .cl{
+    font-size:.82rem;
+  }
+
+  .b-settings{
+    flex-direction:column;
+    align-items:stretch;
+    gap:14px;
+    padding:16px;
+  }
+
+  .b-loc-row,
+  .b-slider{
+    width:100%;
+    min-width:0;
+    flex:none;
+  }
+
+  .b-slider{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:10px;
+  }
+
+  .restaurant-wheel-area{
+    padding:24px 0;
+  }
+
+  .rw-wrap,
+  canvas#rwh{
+    width:min(82vw, 280px) !important;
+    height:min(82vw, 280px) !important;
+  }
+
+  .shop-card{
+    width:100%;
+    padding:20px 16px;
+    border-radius:20px;
+  }
+
+  .shop-card-header{
+    gap:12px;
+  }
+
+  .shop-emoji-badge{
+    width:48px;
+    height:48px;
+    font-size:1.5rem;
+  }
+
+  .shop-name{
+    font-size:1.25rem;
+    line-height:1.35;
+  }
+
+  .shop-info-grid{
+    grid-template-columns:1fr;
+  }
+
+  .shop-links{
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .shop-link-btn{
+    width:100%;
+    justify-content:center;
+  }
+
+  .map-iframe-wrap{
+    height:280px;
+  }
+
+  .no-result,
+  .err-state,
+  .b-loading{
+    padding:34px 18px;
+  }
+
+  footer{
+    padding:18px 12px;
+    line-height:1.6;
+  }
+}
+
+@media (max-width: 390px) {
+  .wrap{
+    padding-left:10px;
+    padding-right:10px;
+  }
+
+  .mode-tab{
+    font-size:.78rem;
+  }
+
+  .cat-grid{
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px;
+  }
+
+  .cat-btn{
+    min-height:70px;
+  }
+
+  .wheel-wrap,
+  canvas#wh{
+    width:240px !important;
+    height:240px !important;
+  }
+
+  .rw-wrap,
+  canvas#rwh{
+    width:250px !important;
+    height:250px !important;
+  }
+}
 </style>
 </head>
 <body data-theme="default">
@@ -670,7 +958,7 @@ function setupGeo(dotId, txtId) {
       },
       () => {
         dot.className = 'dot err';
-        const msg = '⚠️ 定位失敗，使用測試座標（板橋車站）';
+        const msg = '⚠️ 定位失敗，使用測試座標（輔仁大學）';
         document.getElementById('dot').className='dot err';
         document.getElementById('bDot').className='dot err';
         document.getElementById('locTxt').textContent = msg;
@@ -679,7 +967,7 @@ function setupGeo(dotId, txtId) {
       { timeout: 8000 }
     );
   } else {
-    const msg = '⚠️ 瀏覽器不支援定位，使用測試座標（板橋車站）';
+    const msg = '⚠️ 瀏覽器不支援定位，使用測試座標（輔仁大學）';
     ['dot','bDot'].forEach(id=>{document.getElementById(id).className='dot err';});
     ['locTxt','bLocTxt'].forEach(id=>{document.getElementById(id).textContent=msg;});
   }
@@ -816,7 +1104,7 @@ async function fetchRestaurants(cat) {
     sp.classList.remove('show');
     if (!res.ok) { er.classList.add('show'); document.getElementById('errMsg').textContent=data.error||'伺服器錯誤'; return; }
     if (data.using_test_location) {
-      fb.textContent = '📍 使用測試座標（板橋車站）— 請允許瀏覽器定位以顯示您附近的餐廳';
+      fb.textContent = '📍 使用測試座標（輔仁大學）— 請允許瀏覽器定位以顯示您附近的餐廳';
       fb.classList.add('show');
     } else if (data.is_fallback && data.results && data.results.length > 0) {
       fb.textContent = '⚠️ 未找到該類型餐廳，以下顯示附近所有餐廳供參考';

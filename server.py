@@ -4,7 +4,7 @@
 使用 OpenStreetMap Overpass API 查詢附近餐廳（完全免費，無需 API Key）
 
 本版整合所有修改：
-  1. 定位失敗時自動使用測試座標（板橋車站）
+  1. 定位失敗時自動使用測試座標（輔仁大學）
   2. 排除飲料/甜點類餐廳
   3. 搜尋流程：精確 → 擴大半徑 → 回退所有餐廳（原始半徑）
   4. 移除 name 過濾，避免「😢 找不到」誤觸發
@@ -23,9 +23,9 @@ CORS(app)
 OVERPASS_URL  = "https://overpass-api.de/api/interpreter"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 
-# 測試用預設座標（板橋車站）—— 定位失敗時自動使用
-TEST_LAT = 25.0143
-TEST_LNG = 121.4628
+# 測試用預設座標（輔大）—— 定位失敗時自動使用
+TEST_LAT = 25.0337
+TEST_LNG = 121.4340
 
 # 排除飲料 / 甜點 / 酒吧類
 EXCLUDE_CUISINE = (
@@ -153,17 +153,17 @@ def nearby_restaurants():
         resp.raise_for_status()
         results = [parse_element(el) for el in resp.json().get("elements", [])]
 
-        # 第二次搜尋：結果 < 3 → 擴大半徑 ×2，仍用精確 cuisine
-        if len(results) < 3:
-            resp2 = overpass_post(build_query(lat, lng, cuisines, min(radius * 2, 5000)))
-            if resp2.ok:
-                seen = {r["osm_url"] for r in results}
-                for el in resp2.json().get("elements", []):
-                    r = parse_element(el)
-                    if r["osm_url"] not in seen:
-                        results.append(r)
-                        seen.add(r["osm_url"])
-
+        # # 第二次搜尋：結果 < 3 → 擴大半徑 ×2，仍用精確 cuisine
+        # if len(results) < 3:
+        #     resp2 = overpass_post(build_query(lat, lng, cuisines, min(radius * 2, 5000)))
+        #     if resp2.ok:
+        #         seen = {r["osm_url"] for r in results}
+        #         for el in resp2.json().get("elements", []):
+        #             r = parse_element(el)
+        #             if r["osm_url"] not in seen:
+        #                 results.append(r)
+        #                 seen.add(r["osm_url"])
+        
         # 找不到就直接回傳空結果，不再回退搜尋所有餐廳
         return jsonify({
             "category": category,
@@ -201,4 +201,4 @@ if __name__ == '__main__':
     print("🍽️  今天吃什麼？後端伺服器啟動中...")
     print("✅  OpenStreetMap Overpass API（免費，無需 API Key）")
     print(f"🌐  http://localhost:{port}")
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=port, threaded=True)
